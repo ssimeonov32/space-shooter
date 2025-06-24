@@ -29,8 +29,13 @@ cd space-shooter
 npm i
 ```
 
-## 4. Open browser and go to localhost:8080
+## 4. Run the npm start command, also make sure port 8080 on your local machine is free
 ```
+npm run dev
+```
+
+## 5. Open your browser of choice and go to the following url
+```bash
 localhost:8080
 ```
 
