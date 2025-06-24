@@ -1,0 +1,13 @@
+{
+  "name": "bolt",
+  "projectileSheetMetadata": {
+    "width": 9,
+    "height": 9,
+    "framesCount": 5,
+    "animationSpeed": 0.22,
+    "alias": "boltSheet",
+    "src": "bolt.png"
+  },
+  "speed": 12,
+  "damage": 5
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "alias": "laser", "src": "laser.mp3"
+  },
+  {
+    "alias": "shield", "src": "shield.wav"
+  },
+  {
+    "alias": "rocket", "src": "rocket.mp3"
+  },
+  {
+    "alias": "asteroidHit", "src": "asteroid-hit-sound-one.mp3"
+  },
+  {
+    "alias": "asteroidHitTwo", "src": "asteroid-hit-sound-two.mp3"
+  },
+  {
+    "alias": "asteroidDestruction", "src": "asteroid-destruction.mp3"
+  },
+  {
+    "alias": "shipAsteroidCollision", "src": "ship-asteroid-collision.mp3"
+  }
+]

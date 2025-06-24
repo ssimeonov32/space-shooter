@@ -1,0 +1,12 @@
+{
+  "name": "rocket",
+  "projectileSheetMetadata": {
+    "width": 9,
+    "height": 16,
+    "framesCount": 4,
+    "animationSpeed": 0.12,
+    "alias": "rocketSheet",
+    "src": "rocket.png"
+  },
+  "speed": 4
+} 

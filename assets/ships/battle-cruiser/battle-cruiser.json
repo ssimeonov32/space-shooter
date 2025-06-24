@@ -1,0 +1,82 @@
+{
+  "name": "battleCruiser",
+  "sprites": [
+    {
+      "alias": "battleCruiserBaseSprite",
+      "src": "battle-cruiser-base.png"
+    }
+  ],
+  "shipFiringSheetMetadata": {
+    "width": 128,
+    "height": 128,
+    "framesCount": 7,
+    "animationSpeed": 0.33,
+    "alias": "battleCruiserFiringSheet",
+    "src": "battle-cruiser-fire.png"
+  },
+  "shipEngineSheetMetadata": {
+    "width": 128,
+    "height": 128,
+    "framesCount": 8,
+    "animationSpeed": 0.33,
+    "alias": "battleCruiserEngineSheet",
+    "src": "battle-cruiser-engine.png"
+  },
+   "shipShieldSheetMetadata": {
+    "width": 128,
+    "height": 128,
+    "framesCount": 8,
+    "animationSpeed": 0.33,
+    "alias": "battleCruiserShieldSheet",
+    "src": "battle-cruiser-shield.png"
+  },
+  "shipDestructionSheetMetadata": {
+    "width": 128,
+    "height": 128,
+    "framesCount": 18,
+    "animationSpeed": 0.22,
+    "alias": "battleCruiserDestructionSheet",
+    "src": "battle-cruiser-destruction.png"
+  },
+  "weaponPorts": [
+    {
+      "xOffset": 14,
+      "yOffset": 12,
+      "fireFrame": 1
+    },
+    {
+      "xOffset": 14,
+      "yOffset": -12,
+      "fireFrame": 2
+    },
+    {
+      "xOffset": 28,
+      "yOffset": -7,
+      "fireFrame": 3
+    },
+    {
+      "xOffset": 28,
+      "yOffset": 7,
+      "fireFrame": 3
+    },
+    {
+      "xOffset": 7,
+      "yOffset": 5,
+      "fireFrame": 4
+    },
+    {
+      "xOffset": 7,
+      "yOffset": -5,
+      "fireFrame": 5
+    }
+  ],
+  "shipHealthPoints": 10,
+  "shipAcceleration": 4,
+  "shipFireRate": 0.33,
+  "hitBoxType": "rectangle",
+  "hitBoxXOffset": -24,
+  "hitBoxYOffset": -46,
+  "hitBoxWidth": 48,
+  "hitBoxHeight": 82,
+  "hitBoxRadius": 0
+}

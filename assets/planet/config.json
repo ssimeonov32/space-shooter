@@ -1,0 +1,11 @@
+{
+  "name": "planet",
+  "planetSpriteSheet": {
+    "width": 96,
+    "height": 96,
+    "framesCount": 77,
+    "animationSpeed": 0.16,
+    "alias": "planet",
+    "src": "planet.png"
+  }
+}

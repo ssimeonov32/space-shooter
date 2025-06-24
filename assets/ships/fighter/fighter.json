@@ -1,0 +1,75 @@
+{
+  "name": "fighter",
+  "sprites": [
+    {
+      "alias": "fighterBaseSprite",
+      "src": "fighter-base.png"
+    }
+  ],
+  "shipFiringSheetMetadata": {
+    "width": 64,
+    "height": 64,
+    "framesCount": 28,
+    "animationSpeed": 0.33,
+    "alias": "fighterFiringSheet",
+    "src": "fighter-fire.png"
+  },
+  "shipEngineSheetMetadata": {
+    "width": 64,
+    "height": 64,
+    "framesCount": 8,
+    "animationSpeed": 0.33,
+    "alias": "fighterEngineSheet",
+    "src": "fighter-engine.png"
+  },
+   "shipShieldSheetMetadata": {
+    "width": 64,
+    "height": 64,
+    "framesCount": 20,
+    "animationSpeed": 0.33,
+    "alias": "fighterShieldSheet",
+    "src": "fighter-shield.png"
+  },
+  "shipDestructionSheetMetadata": {
+    "width": 64,
+    "height": 64,
+    "framesCount": 18,
+    "animationSpeed": 0.22,
+    "alias": "fighterDestructionSheet",
+    "src": "fighter-destruction.png"
+  },
+  "weaponPorts": [
+    {
+      "xOffset": 7,
+      "yOffset": 7,
+      "fireFrame": 5
+    },
+    {
+      "xOffset": 7,
+      "yOffset": -7,
+      "fireFrame": 8
+    },
+    {
+      "xOffset": 6,
+      "yOffset": 9,
+      "fireFrame": 13
+    },
+       {
+      "xOffset": 6,
+      "yOffset": -9,
+      "fireFrame": 17
+    },
+    {
+      "xOffset": 5,
+      "yOffset": 12,
+      "fireFrame": 21
+    },
+    {
+      "xOffset": 5,
+      "yOffset": -12,
+      "fireFrame": 25
+    }
+  ],
+  "shipAcceleration": 2,
+  "shipFireRate": 0.16
+}

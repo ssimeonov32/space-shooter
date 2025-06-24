@@ -1,0 +1,25 @@
+{
+  "name": "asteroid",
+  "sprites": [
+    {
+      "alias": "asteroidBaseSprite",
+      "src": "asteroid-base.png"
+    }
+  ],
+  "asteroidDestructionSheetMetadata": {
+    "width": 96,
+    "height": 96,
+    "framesCount": 8,
+    "animationSpeed": 0.25,
+    "alias": "asteroidDestructionSheet",
+    "src": "asteroid-destruction.png"
+  },
+  "healthPoints": 25,
+  "damage": 10, 
+  "hitBoxType": "circle",
+  "hitBoxXOffset": 0,
+  "hitBoxYOffset": 0,
+  "hitBoxWidth": 0,
+  "hitBoxHeight": 0,
+  "hitBoxRadius": 16
+}
