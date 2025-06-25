@@ -1,11 +1,11 @@
-import { Application, Assets, Container, FederatedPointerEvent, Text } from "pixi.js";
+import { Application, Container, Text } from "pixi.js";
 import AssetLoader from "./asset-loader/asset-loader";
 import Controller from "./controller/controller";
 import Level from "./level";
 import { Asteroid } from "./asteroid/asteroid";
 import { getOffscreenSpawnPosition, isWithinBuffer } from "./helpers/helpers";
 import { Bolt } from "./projectiles/bolt/bolt";
-import { Directions, KeyboardKeys, MouseButtons, SoundEffects } from "./constants";
+import { Direction, GameConfigEnum, KeyboardKey, MouseButton, SoundEffect } from "./constants";
 import { AsteroidConfig } from "./types/asteroid";
 import { Ship } from "./ship/ship";
 import { rotatedRectCircleCollision, isPointInCircle } from "./helpers/collision-detection";
@@ -15,13 +15,15 @@ import { isInGameViewport, isOutsideGameViewport } from "./helpers/view";
 import { textDict } from "./utils/i18";
 import { ConfigManager } from "./config/config-manager";
 import { ShipConfig } from "./types/ship";
+import { ProjectileConfig } from "./types/projectile";
+import { LevelConfig } from "./types/level";
 
 class SpaceShooterGame {
   private app: Application;
 
-  private controller: Controller = new Controller();
+  private assetLoader: AssetLoader = new AssetLoader();
 
-  private assetLoader!: AssetLoader;
+  private controller: Controller = new Controller();
 
   private boltFactory!: Bolt;
 
@@ -29,7 +31,13 @@ class SpaceShooterGame {
 
   private audioManager: AudioManager = new AudioManager();
 
-  private NUMBER_OF_ASTEROIDS: number = 10;
+  private STARTING_NUMBER_OF_ASTEROIDS: number = 10;
+
+  private MAX_NUMBER_OF_ASTEROIDS: number = 30;
+
+  private POINTS_FOR_NEW_ASTEROIDS: number = 20;
+
+  private number_of_asteroids: number = this.STARTING_NUMBER_OF_ASTEROIDS;
 
   private score: number = 0;
 
@@ -54,23 +62,11 @@ class SpaceShooterGame {
   private updateScore(update: number): void {
     this.score += update;
     this.scoreboard.text = `Score: ${this.score}`
+    this.updateMaxNumberOfAsteroids();
   }
 
-  public async initializeGame() {
-    document.getElementById("game-container")?.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-    });
-
-    await this.app.init({ background: "#000", resizeTo: window, });
-    document.getElementById("game-container")!.appendChild(this.app.canvas);
-
-    this.app.stage.eventMode = 'static';
-    this.app.stage.hitArea = this.app.screen;
-    this.app.stage.sortableChildren = true;
-
-    await this.loadAssets();
-
-    this.registerEventListeners();
+  private async initializeAssetsAndConfigs() {
+    await this.assetLoader.loadAudioAssets();
 
     const font = new FontFace("nicoMoji", `url(${import.meta.env.BASE_URL}/assets/fonts/NicoMoji-Regular.ttf)`);
     await font.load();
@@ -106,16 +102,37 @@ class SpaceShooterGame {
       return;
     }
 
-    this.configManager.setConfig("battleCruiser", battleCruiserConfig);
-    this.configManager.setConfig("asteroid", asteroidConfig);
-    this.configManager.setConfig("bolt", boltConfig);
-    this.configManager.setConfig("planet", planetConfig);
+    this.configManager.setConfig(GameConfigEnum.BATTLE_CRUISER, battleCruiserConfig);
+    this.configManager.setConfig(GameConfigEnum.ASTEROID, asteroidConfig);
+    this.configManager.setConfig(GameConfigEnum.BOLT, boltConfig);
+    this.configManager.setConfig(GameConfigEnum.PLANET, planetConfig);
+  }
+
+  public async initializeGame() {
+    document.getElementById("game-container")?.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+
+    await this.app.init({ background: "#000", resizeTo: window, });
+    document.getElementById("game-container")!.appendChild(this.app.canvas);
+
+    this.app.stage.eventMode = 'static';
+    this.app.stage.hitArea = this.app.screen;
+    this.app.stage.sortableChildren = true;
+
+    await this.initializeAssetsAndConfigs();
+
+    this.registerEventListeners();
     
     this.scoreboard = this.generateScoreText();
 
+    const boltConfig = this.configManager.getConfig<ProjectileConfig>(GameConfigEnum.BOLT);
     this.boltFactory = new Bolt(boltConfig, this.entityManager.addBoltEntity.bind(this.entityManager));
 
-    // Level generation
+    const planetConfig = this.configManager.getConfig<LevelConfig>(GameConfigEnum.PLANET);
+
+    const asteroidConfig = this.configManager.getConfig<AsteroidConfig>(GameConfigEnum.ASTEROID);
+
     const level = new Level(planetConfig);
     const lvl = level.generateLevel();
     this.lvl = lvl;
@@ -123,7 +140,6 @@ class SpaceShooterGame {
     lvl.position.set(this.app.screen.width / 2.6, this.app.screen.height / 2.3);
     lvl.scale.set(3);
     
-    // Player ship creation
     this.generatePlayerShip();
  
     const startGameText = this.generateStartGameText();
@@ -171,38 +187,38 @@ class SpaceShooterGame {
 
       if (isWithinBuffer({ x: playerShip.x, y: playerShip.y }, mousePosition, 10)) {
       } else {
-        if (keys[KeyboardKeys.A]) {
+        if (keys[KeyboardKey.A]) {
           playerShip.moveShip(
             this.app.screen.width,
             this.app.screen.height,
-            Directions.LEFT,
+            Direction.LEFT,
             time.deltaTime
           );
           playerShip.toggleShipEngines(true);
         }
-        if (keys[KeyboardKeys.D]) {
+        if (keys[KeyboardKey.D]) {
           playerShip.moveShip(
             this.app.screen.width,
             this.app.screen.height,
-            Directions.RIGHT,
+            Direction.RIGHT,
             time.deltaTime
           );
           playerShip.toggleShipEngines(true);
         }
-        if (keys[KeyboardKeys.W]) {
+        if (keys[KeyboardKey.W]) {
           playerShip.moveShip(
             this.app.screen.width,
             this.app.screen.height,
-            Directions.UP,
+            Direction.UP,
             time.deltaTime
           );
           playerShip.toggleShipEngines(true);
         }
-        if (keys[KeyboardKeys.S]) {
+        if (keys[KeyboardKey.S]) {
           playerShip.moveShip(
             this.app.screen.width,
             this.app.screen.height,
-            Directions.DOWN,
+            Direction.DOWN,
             time.deltaTime
           );
           playerShip.toggleShipEngines(true);
@@ -213,24 +229,24 @@ class SpaceShooterGame {
         playerShip.toggleShipEngines(false);
       }
 
-      if (keys[MouseButtons.LEFT]) {
+      if (keys[MouseButton.LEFT]) {
         playerShip.shoot();
       }
 
-      if (keys[MouseButtons.RIGHT]) {
-        this.audioManager.play(SoundEffects.SHIELD, {
+      if (keys[MouseButton.RIGHT]) {
+        this.audioManager.play(SoundEffect.SHIELD, {
           speed: Math.random() * 0.2 + 0.9,
           loop: true,
         });
         playerShip.toggleShipShield(true);
       } else {
-        this.audioManager.stop(SoundEffects.SHIELD);
+        this.audioManager.stop(SoundEffect.SHIELD);
         playerShip.toggleShipShield(false);
       }
 
       const numOfAsteroids = Object.values(this.entityManager.getAsteroidEntities()).length;
-      if (numOfAsteroids < this.NUMBER_OF_ASTEROIDS) {
-        for (let i = 0; i < this.NUMBER_OF_ASTEROIDS - numOfAsteroids; i++) {
+      if (numOfAsteroids < this.number_of_asteroids) {
+        for (let i = 0; i < this.number_of_asteroids - numOfAsteroids; i++) {
           this.createAsteroid(this.playerShipContainer);
         }
       }
@@ -278,7 +294,7 @@ class SpaceShooterGame {
           this.app.stage.addChild(bolt.sprite);
           bolt.sprite.zIndex = 1;
           bolt.rendered = true;
-          this.audioManager.play(SoundEffects.LASER, {
+          this.audioManager.play(SoundEffect.LASER, {
             volume: 0.05,
             speed: Math.random() * 0.2 + 0.9,
           })
@@ -297,7 +313,7 @@ class SpaceShooterGame {
             this.app.stage.removeChild(bolt.sprite);
             this.entityManager.removeBoltEntity(bolt.uid);
             asteroid.updateHealthPoints(-boltConfig.damage);
-            this.audioManager.play(Math.random() * 10 < 5 ? SoundEffects.ASTEROID_HIT : SoundEffects.ASTEROID_HIT_TWO, {
+            this.audioManager.play(Math.random() * 10 < 5 ? SoundEffect.ASTEROID_HIT : SoundEffect.ASTEROID_HIT_TWO, {
               volume: 2,
               speed: Math.random() * 0.2 + 0.9,
             });
@@ -312,8 +328,14 @@ class SpaceShooterGame {
     })
   }
 
+  private updateMaxNumberOfAsteroids(): void {
+    if (this.score < this.POINTS_FOR_NEW_ASTEROIDS) return;
+    if (this.number_of_asteroids === this.MAX_NUMBER_OF_ASTEROIDS) return;
+    this.number_of_asteroids = this.STARTING_NUMBER_OF_ASTEROIDS + Math.floor(this.score / this.POINTS_FOR_NEW_ASTEROIDS);
+  }
+
   private generatePlayerShip(): void {
-    const battleCruiserConfig = this.configManager.getConfig<ShipConfig>("battleCruiser");
+    const battleCruiserConfig = this.configManager.getConfig<ShipConfig>(GameConfigEnum.BATTLE_CRUISER);
     if (!battleCruiserConfig) return;
 
     const playerShip = new Ship(
@@ -389,11 +411,6 @@ class SpaceShooterGame {
     this.playerHasDied = bool;
   }
 
-  private async loadAssets() {
-    this.assetLoader = new AssetLoader();
-    await this.assetLoader.loadAudioAssets();
-  }
-
   private startGame(startGame: boolean) {
     if (!this.gameHasStarted && startGame) {
       this.app.stage.addChild(this.lvl);
@@ -406,7 +423,7 @@ class SpaceShooterGame {
   }
 
   private createAsteroid(playerShip?: Container): void {
-    const asteroidConfig = this.configManager.getConfig<AsteroidConfig>("asteroid");
+    const asteroidConfig = this.configManager.getConfig<AsteroidConfig>(GameConfigEnum.ASTEROID);
     if (!asteroidConfig) {
       console.error("Asteroid configuration not loaded.");
       return;
@@ -430,7 +447,7 @@ class SpaceShooterGame {
   }
 
   private createAsteroids(playerShip?: Container): void {
-    for (let i = 0; i < this.NUMBER_OF_ASTEROIDS; i++) {
+    for (let i = 0; i < this.number_of_asteroids; i++) {
       this.createAsteroid(playerShip);
     }
   }
@@ -438,19 +455,19 @@ class SpaceShooterGame {
   private registerEventListeners() {
     this.app.stage.on('pointerdown', (event) => {
       if (event.button === 0) {
-        this.controller.setKey(MouseButtons.LEFT, true);
+        this.controller.setKey(MouseButton.LEFT, true);
       }
       if (event.button === 2) {
-        this.controller.setKey(MouseButtons.RIGHT, true);
+        this.controller.setKey(MouseButton.RIGHT, true);
       }
     });
 
     this.app.stage.on('pointerup', (event) => {
       if (event.button === 0) {
-        this.controller.setKey(MouseButtons.LEFT, false);
+        this.controller.setKey(MouseButton.LEFT, false);
       }
       if (event.button === 2) {
-        this.controller.setKey(MouseButtons.RIGHT, false);
+        this.controller.setKey(MouseButton.RIGHT, false);
       }
     });
   }

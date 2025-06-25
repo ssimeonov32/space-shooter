@@ -1,5 +1,5 @@
 import { Sprite, AnimatedSprite, Container, Texture, Rectangle, Assets, Graphics } from "pixi.js";
-import { Directions, SoundEffects } from "../constants";
+import { Direction, SoundEffect } from "../constants";
 import { ShipConfig, ShipWeaponPort } from "../types/ship";
 import { SpriteSheet } from "../types/sprite";
 import { AudioManager } from "../audio/audio";
@@ -115,7 +115,7 @@ export class Ship extends Container {
   public moveShip(
     appWidth: number,
     appHeight: number,
-    direction: Directions,
+    direction: Direction,
     delta: number
   ): void {
     if (this.isDestroyed) return;
@@ -123,22 +123,22 @@ export class Ship extends Container {
     const angle = this.rotation - Math.PI / 2;
     this.toggleShipEngines(true);
 
-    if (direction === Directions.UP) {
+    if (direction === Direction.UP) {
       this.x += Math.cos(angle) * speed;
       this.y += Math.sin(angle) * speed;
     }
 
-    if (direction === Directions.DOWN) {
+    if (direction === Direction.DOWN) {
       this.x -= Math.cos(angle) * speed;
       this.y -= Math.sin(angle) * speed;
     }
 
-    if (direction === Directions.LEFT) {
+    if (direction === Direction.LEFT) {
       this.x += Math.sin(angle) * speed;
       this.y -= Math.cos(angle) * speed;
     }
 
-    if (direction === Directions.RIGHT) {
+    if (direction === Direction.RIGHT) {
       this.x -= Math.sin(angle) * speed;
       this.y += Math.cos(angle) * speed;
     }
@@ -197,7 +197,7 @@ export class Ship extends Container {
     
     this.shipDestructionAnimatedSprite.visible = true;
     
-    this.audioManager.play(SoundEffects.SHIP_ASTEROID_COLLISION, {
+    this.audioManager.play(SoundEffect.SHIP_ASTEROID_COLLISION, {
       speed: Math.random() * 0.2 + 0.9,
     })
 

@@ -1,4 +1,4 @@
-export enum Directions {
+export enum Direction {
   UP = "up",
   DOWN = "down",
   LEFT = "left",
@@ -7,14 +7,14 @@ export enum Directions {
   RIGHT_MOUSE_DOWN = "rightMouseDown",
 }
 
-export enum KeyboardKeys {
+export enum KeyboardKey {
   W = "KeyW",
   A = "KeyA",
   S = "KeyS",
   D = "KeyD",
 }
 
-export enum MouseButtons {
+export enum MouseButton {
   LEFT = "LeftMouseDown",
   RIGHT = "RightMouseDown",
 }
@@ -25,7 +25,7 @@ export enum HitBoxType {
   POLYGON = "polygon",
 }
 
-export enum SoundEffects {
+export enum SoundEffect {
   LASER = "laser",
   SHIELD = "shield",
   ROCKET = "rocket",
@@ -33,4 +33,11 @@ export enum SoundEffects {
   ASTEROID_HIT_TWO = "asteroidHitTwo",
   ASTEROID_DESTRUCTION = "asteroidDestruction",
   SHIP_ASTEROID_COLLISION = "shipAsteroidCollision",
+}
+
+export enum GameConfigEnum {
+  BATTLE_CRUISER = "battleCruiser",
+  ASTEROID = "asteroid",
+  BOLT = "bolt",
+  PLANET = "planet",
 }

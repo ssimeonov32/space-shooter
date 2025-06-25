@@ -1,13 +1,13 @@
-import { KeyboardKeys, MouseButtons } from "../constants";
+import { KeyboardKey, MouseButton } from "../constants";
 
 export default class Controller {
   private keys: Record<string, boolean> = {
-    [KeyboardKeys.A]: false,
-    [KeyboardKeys.W]: false,
-    [KeyboardKeys.S]: false,
-    [KeyboardKeys.D]: false,
-    [MouseButtons.LEFT]: false,
-    [MouseButtons.RIGHT]: false,
+    [KeyboardKey.A]: false,
+    [KeyboardKey.W]: false,
+    [KeyboardKey.S]: false,
+    [KeyboardKey.D]: false,
+    [MouseButton.LEFT]: false,
+    [MouseButton.RIGHT]: false,
   }
 
   constructor() {

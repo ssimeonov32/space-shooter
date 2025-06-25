@@ -4,7 +4,7 @@ import { SpriteSheet } from "../types/sprite";
 import { AudioManager } from "../audio/audio";
 import { EntityManager } from "../entity-manager/entity-manager";
 import { generateCircleGraphic } from "../helpers/graphics";
-import { SoundEffects } from "../constants";
+import { SoundEffect } from "../constants";
 
 export class Asteroid extends Container {
   private asteroidConfig!: AsteroidConfig;
@@ -86,7 +86,7 @@ export class Asteroid extends Container {
     
     this.isDestroyed = true;
 
-    this.audioManager.play(SoundEffects.ASTEROID_DESTRUCTION, { volume: 2});
+    this.audioManager.play(SoundEffect.ASTEROID_DESTRUCTION, { volume: 2});
     this.asteroidDestructionAnimatedSprite.gotoAndPlay(0);
     this.asteroidDestructionAnimatedSprite.loop = false;
     this.removeChild(this.sprite);
