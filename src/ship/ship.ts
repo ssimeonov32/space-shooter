@@ -25,17 +25,22 @@ export class Ship extends Container {
   private audioManager!: AudioManager;
 
   private isDestroyed: boolean = false;
+
   public createBulletCallback: (weaponPortPosition: ShipWeaponPort, shipContainer: Container) => void;
+
+  public updatePlayerHasDied: (bool: boolean) => void;
 
   constructor(
     shipConfig: ShipConfig,
     audioManager: AudioManager,
-    createBulletCallback: (weaponPortPosition: ShipWeaponPort, shipContainer: Container) => void
+    createBulletCallback: (weaponPortPosition: ShipWeaponPort, shipContainer: Container) => void,
+    updatePlayerHasDied: (bool: boolean) => void,
   ) {
     super();
     this.shipConfig = shipConfig;
     this.audioManager = audioManager;
     this.createBulletCallback = createBulletCallback;
+    this.updatePlayerHasDied = updatePlayerHasDied;
   }
 
   private createAnimatedSpriteFromSpriteSheet(spriteSheet: SpriteSheet): AnimatedSprite {
@@ -203,6 +208,7 @@ export class Ship extends Container {
     this.shipDestructionAnimatedSprite.onComplete = () => {
       this.removeChild(this);
       stage.removeChild(this);
+      this.updatePlayerHasDied(true);
     };
   }
 }

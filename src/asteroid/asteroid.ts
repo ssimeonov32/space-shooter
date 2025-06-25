@@ -26,16 +26,20 @@ export class Asteroid extends Container {
 
   private hasEnteredView: boolean = false;
 
+  private updateScore: (update: number) => void; 
+
   constructor(
     asteroidConfig: AsteroidConfig,
     audioManager: AudioManager,
-    entityManager: EntityManager
+    entityManager: EntityManager,
+    updateScore: (update: number) => void,
   ) {
     super();
     this.asteroidConfig = asteroidConfig;
     this.audioManager = audioManager;
     this.entityManager = entityManager;
     this.createAsteroidContainer();
+    this.updateScore = updateScore;
   }
 
   private createAnimatedSpriteFromSpriteSheet(spriteSheet: SpriteSheet): AnimatedSprite {
@@ -92,6 +96,7 @@ export class Asteroid extends Container {
     this.asteroidDestructionAnimatedSprite.onComplete = () => {
       this.entityManager.removeAsteroidEntity(this.uid);
       stage.removeChild(this);
+      this.updateScore(10)
     };
   }
 

@@ -7,7 +7,7 @@ import { SpriteSrc } from "../types/sprite";
 
 export default class AssetLoader {
   public async loadAudioAssets(): Promise<void> {
-    const audioAssetsPath = '/assets/sounds/';
+    const audioAssetsPath = `${import.meta.env.BASE_URL}/assets/sounds/`;
     const audioConfigPath = `${audioAssetsPath}audio.json`;
     try {
       const audioConfigResponse = await fetch(audioConfigPath);
@@ -23,7 +23,7 @@ export default class AssetLoader {
   }
 
   public async loadAsteroidAssets(): Promise<AsteroidConfig | void> {
-    const folderPath = `/assets/asteroid/`
+    const folderPath = `${import.meta.env.BASE_URL}/assets/asteroid/`
     const shipConfigPath = `${folderPath}/asteroid.json`;
     try {
       const asteroidConfigResponse = await fetch(shipConfigPath);
@@ -45,7 +45,7 @@ export default class AssetLoader {
   }
   
   public async loadProjectile(projectileName: string): Promise<ProjectileConfig | void> {
-    const folderPath = `/assets/projectiles/${projectileName}`;
+    const folderPath = `${import.meta.env.BASE_URL}/assets/projectiles/${projectileName}`;
     const projectileConfigPath = `${folderPath}/${projectileName}.json`;
     try {
       const projectileConfigResponse = await fetch(projectileConfigPath);
@@ -64,7 +64,7 @@ export default class AssetLoader {
   }
 
   public async loadShip(shipName: string): Promise<ShipConfig | void> {
-    const folderPath = `/assets/ships/${shipName}`
+    const folderPath = `${import.meta.env.BASE_URL}/assets/ships/${shipName}`
     const shipConfigPath = `${folderPath}/${shipName}.json`;
     try {
       const shipConfigResponse = await fetch(shipConfigPath);
@@ -92,7 +92,7 @@ export default class AssetLoader {
   }
 
   public async loadPlanetAssets(): Promise<any> {
-    const folderPath = `/assets/planet/`;
+    const folderPath = `${import.meta.env.BASE_URL}/assets/planet/`;
     const planetConfigPath = `${folderPath}/config.json`;
     try {
       const planetConfigResponse = await fetch(planetConfigPath);
