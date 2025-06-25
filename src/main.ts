@@ -397,13 +397,13 @@ class SpaceShooterGame {
 
   private restartGame() {
     this.score = 0;
+    this.number_of_asteroids = this.STARTING_NUMBER_OF_ASTEROIDS;
     this.playerHasDied = false;
     this.gameHasStarted = false;
     this.gameJoever = false;
     this.app.stage.removeChildren();
     this.generatePlayerShip();
     this.entityManager.removeAllAsteroidEntities();
-    
     this.startGame(true);
   }
 
