@@ -1,4 +1,4 @@
-import { Application, Assets, Container, Sprite, Text } from "pixi.js";
+import { Application, Assets, Container, FederatedPointerEvent, Sprite, Text } from "pixi.js";
 import AssetLoader from "./asset-loader/asset-loader";
 import Controller from "./controller/controller";
 import Level from "./level";
@@ -27,7 +27,6 @@ import { ShipConfig } from "./types/ship";
 import { ProjectileConfig } from "./types/projectile";
 import { LevelConfig } from "./types/level";
 import { HealthBar } from "./healthbar/healthbar";
-import { HealthBarConfig } from "./types/health-bar/health-bar";
 
 class SpaceShooterGame {
   private app: Application;
@@ -65,6 +64,8 @@ class SpaceShooterGame {
   private playerShipContainer!: Container;
 
   private configManager: ConfigManager = new ConfigManager();
+
+  private crosshairSprite!: Sprite;
 
   private healthBar!: HealthBar;
   constructor() {
@@ -146,6 +147,20 @@ class SpaceShooterGame {
 
     this.registerEventListeners();
 
+    await Assets.load({
+      alias: "crosshair",
+      src: `${import.meta.env.BASE_URL}/assets/crosshair.png`,
+    })
+
+    const crosshairSprite = new Sprite(Assets.get("crosshair"));
+    crosshairSprite.anchor.set(0.5);
+    crosshairSprite.zIndex = 8;
+    this.crosshairSprite = crosshairSprite;
+
+    this.app.stage.on("globalmousemove", (event: FederatedPointerEvent ) => {
+      crosshairSprite.position.copyFrom(event.global);
+    })
+
     const healthBar = new HealthBar(this.configManager);
 
     this.healthBar = healthBar;
@@ -181,8 +196,11 @@ class SpaceShooterGame {
     startGameText.cursor = "pointer";
     if (!this.gameHasStarted) {
       startGameText.on("mousedown", () => {
+        this.app.renderer.events.cursorStyles.default = 'none';
+        this.app.stage.addChild(crosshairSprite);
         this.startGame(true);
       });
+
       this.app.stage.addChild(startGameText);
     }
 
@@ -207,6 +225,7 @@ class SpaceShooterGame {
             this.app.stage.removeChild(asteroid);
           }
         );
+        this.app.renderer.events.cursorStyles.default = 'default';
         this.entityManager.removeAllAsteroidEntities();
         return;
       }
@@ -266,6 +285,8 @@ class SpaceShooterGame {
 
       if (keys[MouseButton.LEFT]) {
         playerShip.shoot();
+         const scale = 1 + Math.random() * 2 * 0.2;
+        crosshairSprite.scale.set(scale);
       }
 
       if (keys[MouseButton.RIGHT]) {
@@ -523,6 +544,7 @@ class SpaceShooterGame {
 
   private updatePlayerHasDied(bool: boolean): void {
     this.playerHasDied = bool;
+    this.app.stage.removeChild(this.crosshairSprite)
   }
 
   private startGame(startGame: boolean) {
@@ -534,6 +556,7 @@ class SpaceShooterGame {
       this.createAsteroids();
       this.scoreboard = this.generateScoreText();
       this.app.stage.addChild(this.scoreboard);
+       this.app.renderer.events.cursorStyles.default = 'none';
     }
   }
 
