@@ -70,7 +70,7 @@
       "fireFrame": 5
     }
   ],
-  "shipHealthPoints": 10,
+  "shipHealthPoints": 100,
   "shipAcceleration": 4,
   "shipFireRate": 0.33,
   "hitBoxType": "rectangle",
