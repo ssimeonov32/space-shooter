@@ -153,8 +153,6 @@ class SpaceShooterGame {
     healthBar.y = 18; 
     healthBar.updateHealthBarDamage(0);
 
-    this.app.stage.addChild(healthBar);
-
     this.scoreboard = this.generateScoreText();
 
     const boltConfig = this.configManager.getConfig<ProjectileConfig>(GameConfigEnum.BOLT);
@@ -519,6 +517,7 @@ class SpaceShooterGame {
     this.app.stage.removeChildren();
     this.generatePlayerShip();
     this.entityManager.removeAllAsteroidEntities();
+    this.healthBar.resetHealthBar();
     this.startGame(true);
   }
 
@@ -530,6 +529,7 @@ class SpaceShooterGame {
     if (!this.gameHasStarted && startGame) {
       this.app.stage.addChild(this.lvl);
       this.app.stage.addChild(this.playerShipContainer);
+      this.app.stage.addChild(this.healthBar);
       this.gameHasStarted = true;
       this.createAsteroids();
       this.scoreboard = this.generateScoreText();

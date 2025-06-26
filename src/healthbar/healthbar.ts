@@ -50,6 +50,7 @@ export class HealthBar extends Container {
       return;
     }
 
+    console.log(healthPointsLostPercentage);
     const width = this.HEALTH_BAR_WIDTH * (healthPointsLostPercentage / 100);
     const rectangleX = 68 - (width - 2);
     this.healthBarDamage.rect(
@@ -59,5 +60,9 @@ export class HealthBar extends Container {
       10
     )
     this.healthBarDamage.fill(0x00000);
+  }
+
+  public resetHealthBar(): void {
+    this.healthBarDamage.clear();
   }
 }

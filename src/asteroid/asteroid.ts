@@ -92,11 +92,11 @@ export class Asteroid extends Container {
     this.removeChild(this.sprite);
     this.asteroidDestructionAnimatedSprite.visible = true;
     this.asteroidDestructionAnimatedSprite.play();
+    this.updateScore(10)
 
     this.asteroidDestructionAnimatedSprite.onComplete = () => {
       this.entityManager.removeAsteroidEntity(this.uid);
       stage.removeChild(this);
-      this.updateScore(10)
     };
   }
 
