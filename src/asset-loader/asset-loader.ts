@@ -4,8 +4,36 @@ import { AsteroidConfig } from "../types/asteroid";
 import { ProjectileConfig } from "../types/projectile";
 import { ShipConfig } from "../types/ship";
 import { SpriteSrc } from "../types/sprite";
+import { HealthBarConfig, HealthPointConfig } from "../types/health-bar/health-bar";
 
 export default class AssetLoader {
+
+  public async loadHealthBarAssets(): Promise<{ healthBarConfig: HealthBarConfig, healthPointConfig: HealthPointConfig } | void> {
+    const healthBarAssetsPath = `${import.meta.env.BASE_URL}/assets/health-bar/`;
+    const healthBarConfigPath = `${healthBarAssetsPath}health-bar-config.json`;
+  
+    const healthPointConfigPath = `${healthBarAssetsPath}health-point-config.json`;
+    try {
+      const healthBarResponse = await fetch(healthBarConfigPath);
+      const healthPointResponse = await fetch(healthPointConfigPath);
+
+      const healthBarConfigData = await healthBarResponse.json();
+      const healthPointConfigData = await healthPointResponse.json();
+
+      await Assets.load([
+        { alias: healthBarConfigData.sprite.alias, src: `${healthBarAssetsPath}${healthBarConfigData.sprite.src}` },
+        { alias: healthPointConfigData.sprite.alias, src: `${healthBarAssetsPath}${healthPointConfigData.sprite.src}` }
+      ])
+
+      return {
+        healthBarConfig: healthBarConfigData,
+        healthPointConfig: healthPointConfigData
+      };
+    } catch (error) {
+      console.error(`Error loading health bar assets configuration from ${healthBarConfigPath}`, error);
+    }
+  } 
+
   public async loadAudioAssets(): Promise<void> {
     const audioAssetsPath = `${import.meta.env.BASE_URL}/assets/sounds/`;
     const audioConfigPath = `${audioAssetsPath}audio.json`;

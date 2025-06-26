@@ -40,4 +40,6 @@ export enum GameConfigEnum {
   ASTEROID = "asteroid",
   BOLT = "bolt",
   PLANET = "planet",
+  HEALTH_BAR = "healthBar",
+  HEALTH_POINT = "healthPoint",
 }

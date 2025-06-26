@@ -1,14 +1,23 @@
-import { Application, Container, Text } from "pixi.js";
+import { Application, Assets, Container, Sprite, Text } from "pixi.js";
 import AssetLoader from "./asset-loader/asset-loader";
 import Controller from "./controller/controller";
 import Level from "./level";
 import { Asteroid } from "./asteroid/asteroid";
 import { getOffscreenSpawnPosition, isWithinBuffer } from "./helpers/helpers";
 import { Bolt } from "./projectiles/bolt/bolt";
-import { Direction, GameConfigEnum, KeyboardKey, MouseButton, SoundEffect } from "./constants";
+import {
+  Direction,
+  GameConfigEnum,
+  KeyboardKey,
+  MouseButton,
+  SoundEffect,
+} from "./constants";
 import { AsteroidConfig } from "./types/asteroid";
 import { Ship } from "./ship/ship";
-import { rotatedRectCircleCollision, isPointInCircle } from "./helpers/collision-detection";
+import {
+  rotatedRectCircleCollision,
+  isPointInCircle,
+} from "./helpers/collision-detection";
 import { EntityManager } from "./entity-manager/entity-manager";
 import { AudioManager } from "./audio/audio";
 import { isInGameViewport, isOutsideGameViewport } from "./helpers/view";
@@ -17,6 +26,8 @@ import { ConfigManager } from "./config/config-manager";
 import { ShipConfig } from "./types/ship";
 import { ProjectileConfig } from "./types/projectile";
 import { LevelConfig } from "./types/level";
+import { HealthBar } from "./healthbar/healthbar";
+import { HealthBarConfig } from "./types/health-bar/health-bar";
 
 class SpaceShooterGame {
   private app: Application;
@@ -55,13 +66,14 @@ class SpaceShooterGame {
 
   private configManager: ConfigManager = new ConfigManager();
 
+  private healthBar!: HealthBar;
   constructor() {
     this.app = new Application();
   }
 
   private updateScore(update: number): void {
     this.score += update;
-    this.scoreboard.text = `Score: ${this.score}`
+    this.scoreboard.text = `Score: ${this.score}`;
     this.updateMaxNumberOfAsteroids();
   }
 
@@ -76,7 +88,15 @@ class SpaceShooterGame {
     const asteroidConfig = await this.assetLoader.loadAsteroidAssets();
     const boltConfig = await this.assetLoader.loadProjectile("bolt");
     const planetConfig = await this.assetLoader.loadPlanetAssets();
-  
+    const hpConfigs = await this.assetLoader.loadHealthBarAssets();
+
+    if (!hpConfigs) {
+      console.error("Health point configurations not loaded.");
+      return;
+    }
+    const healthPointConfig = hpConfigs.healthPointConfig;
+    const healthBarConfig = hpConfigs.healthBarConfig;
+
     if (!battleCruiserConfig) {
       console.error("Battle Cruiser configuration not loaded.");
       return;
@@ -106,28 +126,39 @@ class SpaceShooterGame {
     this.configManager.setConfig(GameConfigEnum.ASTEROID, asteroidConfig);
     this.configManager.setConfig(GameConfigEnum.BOLT, boltConfig);
     this.configManager.setConfig(GameConfigEnum.PLANET, planetConfig);
+    this.configManager.setConfig(GameConfigEnum.HEALTH_BAR, healthBarConfig);
+    this.configManager.setConfig(GameConfigEnum.HEALTH_POINT, healthPointConfig);
   }
 
   public async initializeGame() {
-    document.getElementById("game-container")?.addEventListener('contextmenu', (e) => {
+    document.getElementById("game-container")?.addEventListener("contextmenu", (e) => {
       e.preventDefault();
     });
 
-    await this.app.init({ background: "#000", resizeTo: window, });
+    await this.app.init({ background: "#000", resizeTo: window });
     document.getElementById("game-container")!.appendChild(this.app.canvas);
 
-    this.app.stage.eventMode = 'static';
+    this.app.stage.eventMode = "static";
     this.app.stage.hitArea = this.app.screen;
     this.app.stage.sortableChildren = true;
 
     await this.initializeAssetsAndConfigs();
 
     this.registerEventListeners();
-    
+
+    const healthBar = new HealthBar(this.configManager);
+
+    this.healthBar = healthBar;
+    healthBar.x = this.app.screen.width - healthBar.width / 2;
+    healthBar.y = 18; 
+    healthBar.updateHealthBarDamage(0);
+
+    this.app.stage.addChild(healthBar);
+
     this.scoreboard = this.generateScoreText();
 
     const boltConfig = this.configManager.getConfig<ProjectileConfig>(GameConfigEnum.BOLT);
-    this.boltFactory = new Bolt(boltConfig, this.entityManager.addBoltEntity.bind(this.entityManager));
+    this.boltFactory = new Bolt(boltConfig,this.entityManager.addBoltEntity.bind(this.entityManager));
 
     const planetConfig = this.configManager.getConfig<LevelConfig>(GameConfigEnum.PLANET);
 
@@ -139,53 +170,59 @@ class SpaceShooterGame {
     lvl.anchor.set(0.5);
     lvl.position.set(this.app.screen.width / 2.6, this.app.screen.height / 2.3);
     lvl.scale.set(3);
-    
+
     this.generatePlayerShip();
- 
+
     const startGameText = this.generateStartGameText();
-    startGameText.anchor = 0.5
-    startGameText.position.set(this.app.screen.width / 2, this.app.screen.height / 2);
+    startGameText.anchor = 0.5;
+    startGameText.position.set(
+      this.app.screen.width / 2,
+      this.app.screen.height / 2
+    );
     startGameText.eventMode = "static";
     startGameText.cursor = "pointer";
     if (!this.gameHasStarted) {
-      startGameText.on('mousedown', () => {
+      startGameText.on("mousedown", () => {
         this.startGame(true);
-      })
+      });
       this.app.stage.addChild(startGameText);
     }
 
-    this.app.ticker.maxFPS = 60;  
-    
-    this.app.ticker.add((time) => {
+    this.app.ticker.maxFPS = 60;
 
+    this.app.ticker.add((time) => {
       const playerShip = this.entityManager.getPlayerShipEntity();
       if (!playerShip) return;
 
       if (!this.gameHasStarted) return;
 
       if (this.playerHasDied) {
-        if (this.gameJoever) return
-        
+        if (this.gameJoever) return;
+
         const gameOverContainer = this.generateGameOverContainer();
         gameOverContainer.x = this.app.screen.width / 2;
         gameOverContainer.y = this.app.screen.height / 2;
         this.app.stage.addChild(gameOverContainer);
         this.gameJoever = true;
-        Object.values(this.entityManager.getAsteroidEntities()).forEach((asteroid: Asteroid) => {
-          this.app.stage.removeChild(asteroid);
-        })
-        this.entityManager.removeAllAsteroidEntities()
+        Object.values(this.entityManager.getAsteroidEntities()).forEach(
+          (asteroid: Asteroid) => {
+            this.app.stage.removeChild(asteroid);
+          }
+        );
+        this.entityManager.removeAllAsteroidEntities();
         return;
       }
 
-      this.app.stage.removeChild(startGameText)
+      this.app.stage.removeChild(startGameText);
       const keys = this.controller.getKeys();
 
       const mousePosition = this.app.renderer.events.pointer.screen;
-      
+
       playerShip.followPoint(mousePosition.x, mousePosition.y);
 
-      if (isWithinBuffer({ x: playerShip.x, y: playerShip.y }, mousePosition, 10)) {
+      if (
+        isWithinBuffer({ x: playerShip.x, y: playerShip.y }, mousePosition, 10)
+      ) {
       } else {
         if (keys[KeyboardKey.A]) {
           playerShip.moveShip(
@@ -244,49 +281,69 @@ class SpaceShooterGame {
         playerShip.toggleShipShield(false);
       }
 
-      const numOfAsteroids = Object.values(this.entityManager.getAsteroidEntities()).length;
+      const numOfAsteroids = Object.values(
+        this.entityManager.getAsteroidEntities()
+      ).length;
       if (numOfAsteroids < this.number_of_asteroids) {
         for (let i = 0; i < this.number_of_asteroids - numOfAsteroids; i++) {
           this.createAsteroid(this.playerShipContainer);
         }
       }
 
-      Object.values(this.entityManager.getAsteroidEntities()).forEach((asteroid: Asteroid) => {
-        asteroid.moveAsteroid(time.deltaTime);
-        asteroid.rotateAsteroid(time.deltaTime, Math.random() * 0.02 + 0.01);
+      Object.values(this.entityManager.getAsteroidEntities()).forEach(
+        (asteroid: Asteroid) => {
+          asteroid.moveAsteroid(time.deltaTime);
+          asteroid.rotateAsteroid(time.deltaTime, Math.random() * 0.02 + 0.01);
 
-        if (isInGameViewport(asteroid.x, asteroid.y, this.app.screen.width, this.app.screen.height)) {
-          asteroid.updateVisibility();
-        }
+          if (
+            isInGameViewport(
+              asteroid.x,
+              asteroid.y,
+              this.app.screen.width,
+              this.app.screen.height
+            )
+          ) {
+            asteroid.updateVisibility();
+          }
 
-        if (isOutsideGameViewport(asteroid.x, asteroid.y, this.app.screen.width, this.app.screen.height)) {
-          if (!asteroid.getHasEnteredView()) return;
-          this.entityManager.removeAsteroidEntity(asteroid.uid);
-          this.app.stage.removeChild(asteroid);
-          this.createAsteroid(this.playerShipContainer);
-        }
+          if (
+            isOutsideGameViewport(
+              asteroid.x,
+              asteroid.y,
+              this.app.screen.width,
+              this.app.screen.height
+            )
+          ) {
+            if (!asteroid.getHasEnteredView()) return;
+            this.entityManager.removeAsteroidEntity(asteroid.uid);
+            this.app.stage.removeChild(asteroid);
+            this.createAsteroid(this.playerShipContainer);
+          }
 
-        const asteroidHitBox = asteroid.getHitBox();
-        const asteroidHitBoxPosition = asteroidHitBox.getGlobalPosition();
-        const playerShipHitBox = playerShip.getHitBox();
-        const playerShipHitBoxPosition = playerShipHitBox.getGlobalPosition();
+          const asteroidHitBox = asteroid.getHitBox();
+          const asteroidHitBoxPosition = asteroidHitBox.getGlobalPosition();
+          const playerShipHitBox = playerShip.getHitBox();
+          const playerShipHitBoxPosition = playerShipHitBox.getGlobalPosition();
 
-        if (!asteroid.getIsDestroyed()) {
-          if (rotatedRectCircleCollision(
-            asteroidHitBoxPosition.x,
-            asteroidHitBoxPosition.y,
-            asteroidConfig.hitBoxRadius,
-            playerShipHitBoxPosition.x,
-            playerShipHitBoxPosition.y,
-            playerShipHitBox.width,
-            playerShipHitBox.height,
-            playerShip.rotation
-          )) {
-            asteroid.destroyAsteroid(this.app.stage);
-            playerShip.updateHealthPoints(-asteroid.getDamage());
+          if (!asteroid.getIsDestroyed()) {
+            if (
+              rotatedRectCircleCollision(
+                asteroidHitBoxPosition.x,
+                asteroidHitBoxPosition.y,
+                asteroidConfig.hitBoxRadius,
+                playerShipHitBoxPosition.x,
+                playerShipHitBoxPosition.y,
+                playerShipHitBox.width,
+                playerShipHitBox.height,
+                playerShip.rotation
+              )
+            ) {
+              asteroid.destroyAsteroid(this.app.stage);
+              playerShip.updateHealthPoints(-asteroid.getDamage());
+            }
           }
         }
-      })
+      );
 
       Object.values(this.entityManager.getBoltEntities()).forEach((bolt) => {
         if (!bolt.rendered) {
@@ -297,7 +354,7 @@ class SpaceShooterGame {
           this.audioManager.play(SoundEffect.LASER, {
             volume: 0.05,
             speed: Math.random() * 0.2 + 0.9,
-          })
+          });
         }
         const angle = bolt.sprite.rotation - Math.PI / 2;
         const deltaX = Math.cos(angle) * boltConfig.speed * time.deltaTime;
@@ -305,44 +362,71 @@ class SpaceShooterGame {
         bolt.sprite.x += deltaX;
         bolt.sprite.y += deltaY;
 
-        Object.values(this.entityManager.getAsteroidEntities()).forEach((asteroid: Asteroid) => {
-          const hitBox = asteroid.getHitBox();
-          const hitBoxPosition = hitBox.getGlobalPosition();
+        Object.values(this.entityManager.getAsteroidEntities()).forEach(
+          (asteroid: Asteroid) => {
+            const hitBox = asteroid.getHitBox();
+            const hitBoxPosition = hitBox.getGlobalPosition();
 
-          if (isPointInCircle(bolt.sprite.x, bolt.sprite.y, hitBoxPosition.x, hitBoxPosition.y, asteroidConfig.hitBoxRadius)) {
-            this.app.stage.removeChild(bolt.sprite);
-            this.entityManager.removeBoltEntity(bolt.uid);
-            asteroid.updateHealthPoints(-boltConfig.damage);
-            this.audioManager.play(Math.random() * 10 < 5 ? SoundEffect.ASTEROID_HIT : SoundEffect.ASTEROID_HIT_TWO, {
-              volume: 2,
-              speed: Math.random() * 0.2 + 0.9,
-            });
+            if (
+              isPointInCircle(
+                bolt.sprite.x,
+                bolt.sprite.y,
+                hitBoxPosition.x,
+                hitBoxPosition.y,
+                asteroidConfig.hitBoxRadius
+              )
+            ) {
+              this.app.stage.removeChild(bolt.sprite);
+              this.entityManager.removeBoltEntity(bolt.uid);
+              asteroid.updateHealthPoints(-boltConfig.damage);
+              this.audioManager.play(
+                Math.random() * 10 < 5
+                  ? SoundEffect.ASTEROID_HIT
+                  : SoundEffect.ASTEROID_HIT_TWO,
+                {
+                  volume: 2,
+                  speed: Math.random() * 0.2 + 0.9,
+                }
+              );
+            }
           }
-        })
+        );
 
-        if (isOutsideGameViewport(bolt.sprite.x, bolt.sprite.y, this.app.screen.width, this.app.screen.height)) {
+        if (
+          isOutsideGameViewport(
+            bolt.sprite.x,
+            bolt.sprite.y,
+            this.app.screen.width,
+            this.app.screen.height
+          )
+        ) {
           this.app.stage.removeChild(bolt.sprite);
           this.entityManager.removeBoltEntity(bolt.uid);
         }
-      })
-    })
+      });
+    });
   }
 
   private updateMaxNumberOfAsteroids(): void {
     if (this.score < this.POINTS_FOR_NEW_ASTEROIDS) return;
     if (this.number_of_asteroids === this.MAX_NUMBER_OF_ASTEROIDS) return;
-    this.number_of_asteroids = this.STARTING_NUMBER_OF_ASTEROIDS + Math.floor(this.score / this.POINTS_FOR_NEW_ASTEROIDS);
+    this.number_of_asteroids =
+      this.STARTING_NUMBER_OF_ASTEROIDS +
+      Math.floor(this.score / this.POINTS_FOR_NEW_ASTEROIDS);
   }
 
   private generatePlayerShip(): void {
-    const battleCruiserConfig = this.configManager.getConfig<ShipConfig>(GameConfigEnum.BATTLE_CRUISER);
+    const battleCruiserConfig = this.configManager.getConfig<ShipConfig>(
+      GameConfigEnum.BATTLE_CRUISER
+    );
     if (!battleCruiserConfig) return;
 
     const playerShip = new Ship(
       battleCruiserConfig,
-      this.audioManager, 
+      this.audioManager,
+      this.healthBar,
       this.boltFactory.createBolt.bind(this.boltFactory),
-      this.updatePlayerHasDied.bind(this),
+      this.updatePlayerHasDied.bind(this)
     );
     this.entityManager.setPlayerShipEntity(playerShip);
     const playerShipContainer = playerShip.createShipContainer();
@@ -353,19 +437,51 @@ class SpaceShooterGame {
   }
 
   private generateScoreText(): Text {
-    return new Text({ text: `${textDict.SCORE} ${this.score}`, style: { fontFamily: "NicoMoji", fill: 0xffffff, fontSize: 24, fontWeight: '500'}})
+    return new Text({
+      text: `${textDict.SCORE} ${this.score}`,
+      style: {
+        fontFamily: "NicoMoji",
+        fill: 0xffffff,
+        fontSize: 24,
+        fontWeight: "500",
+      },
+    });
   }
-  
+
   private generateRestartText(): Text {
-    return new Text({ text: `${textDict.RESTART}`, style: { fontFamily: "NicoMoji", fill: 0xffffff, fontSize: 24, fontWeight: '500'}})
+    return new Text({
+      text: `${textDict.RESTART}`,
+      style: {
+        fontFamily: "NicoMoji",
+        fill: 0xffffff,
+        fontSize: 24,
+        fontWeight: "500",
+      },
+    });
   }
 
   private generateGameOverText(): Text {
-    return new Text({ text: `${textDict.GAME_OVER}`, style: { fontFamily: "NicoMoji", fill: 0xffffff, fontSize: 24, fontWeight: '500'}})
+    return new Text({
+      text: `${textDict.GAME_OVER}`,
+      style: {
+        fontFamily: "NicoMoji",
+        fill: 0xffffff,
+        fontSize: 24,
+        fontWeight: "500",
+      },
+    });
   }
 
   private generateStartGameText(): Text {
-    return new Text({ text: `${textDict.START_GAME}`, style: { fontFamily: "NicoMoji", fill: 0xffffff, fontSize: 24, fontWeight: '500'}})
+    return new Text({
+      text: `${textDict.START_GAME}`,
+      style: {
+        fontFamily: "NicoMoji",
+        fill: 0xffffff,
+        fontSize: 24,
+        fontWeight: "500",
+      },
+    });
   }
 
   private generateGameOverContainer(): Container {
@@ -373,7 +489,7 @@ class SpaceShooterGame {
     const gameOverText = this.generateGameOverText();
     const scoreText = this.generateScoreText();
     const restartText = this.generateRestartText();
-    
+
     gameOverText.anchor.set(0.5);
     gameOverText.y = -70;
     gameOverContainer.addChild(gameOverText);
@@ -388,8 +504,7 @@ class SpaceShooterGame {
     restartText.cursor = "pointer";
     restartText.on("pointerdown", () => {
       this.restartGame();
-      
-    })
+    });
 
     gameOverContainer.addChild(restartText);
     return gameOverContainer;
@@ -417,20 +532,30 @@ class SpaceShooterGame {
       this.app.stage.addChild(this.playerShipContainer);
       this.gameHasStarted = true;
       this.createAsteroids();
-      this.scoreboard = this.generateScoreText();;
+      this.scoreboard = this.generateScoreText();
       this.app.stage.addChild(this.scoreboard);
     }
   }
 
   private createAsteroid(playerShip?: Container): void {
-    const asteroidConfig = this.configManager.getConfig<AsteroidConfig>(GameConfigEnum.ASTEROID);
+    const asteroidConfig = this.configManager.getConfig<AsteroidConfig>(
+      GameConfigEnum.ASTEROID
+    );
     if (!asteroidConfig) {
       console.error("Asteroid configuration not loaded.");
       return;
     }
-    const asteroid = new Asteroid(asteroidConfig, this.audioManager, this.entityManager, this.updateScore.bind(this));
+    const asteroid = new Asteroid(
+      asteroidConfig,
+      this.audioManager,
+      this.entityManager,
+      this.updateScore.bind(this)
+    );
 
-    const { x, y } = getOffscreenSpawnPosition(this.app.screen.width, this.app.screen.height);
+    const { x, y } = getOffscreenSpawnPosition(
+      this.app.screen.width,
+      this.app.screen.height
+    );
     asteroid.x = x;
     asteroid.y = y;
 
@@ -439,7 +564,11 @@ class SpaceShooterGame {
     if (playerShip) {
       asteroid.setDirectionToward(playerShip.x, playerShip.y, 2);
     } else {
-      asteroid.setDirectionToward(Math.random() * this.app.screen.width, Math.random() * this.app.screen.height, 1);
+      asteroid.setDirectionToward(
+        Math.random() * this.app.screen.width,
+        Math.random() * this.app.screen.height,
+        1
+      );
     }
 
     this.app.stage.addChild(asteroid);
@@ -453,7 +582,7 @@ class SpaceShooterGame {
   }
 
   private registerEventListeners() {
-    this.app.stage.on('pointerdown', (event) => {
+    this.app.stage.on("pointerdown", (event) => {
       if (event.button === 0) {
         this.controller.setKey(MouseButton.LEFT, true);
       }
@@ -462,7 +591,7 @@ class SpaceShooterGame {
       }
     });
 
-    this.app.stage.on('pointerup', (event) => {
+    this.app.stage.on("pointerup", (event) => {
       if (event.button === 0) {
         this.controller.setKey(MouseButton.LEFT, false);
       }
@@ -474,6 +603,6 @@ class SpaceShooterGame {
 }
 
 (async () => {
-  const game = new SpaceShooterGame()
+  const game = new SpaceShooterGame();
   await game.initializeGame();
-})()
+})();

@@ -1,0 +1,10 @@
+{
+  "name": "healthBar",
+  "sprite": {
+    "alias": "healthBar",
+    "src": "health-bar.png",
+    "width": 96,
+    "height": 18
+  },
+  "numberOfHealthPoints": 8
+}

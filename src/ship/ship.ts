@@ -4,6 +4,7 @@ import { ShipConfig, ShipWeaponPort } from "../types/ship";
 import { SpriteSheet } from "../types/sprite";
 import { AudioManager } from "../audio/audio";
 import { generateRectangleGraphic } from "../helpers/graphics";
+import { HealthBar } from "../healthbar/healthbar";
 
 export class Ship extends Container {
   private shipEngineAnimatedSprite!: AnimatedSprite
@@ -26,21 +27,28 @@ export class Ship extends Container {
 
   private isDestroyed: boolean = false;
 
-  public createBulletCallback: (weaponPortPosition: ShipWeaponPort, shipContainer: Container) => void;
+  private currentHealthPoints: number = 0;
 
-  public updatePlayerHasDied: (bool: boolean) => void;
+  private createBulletCallback: (weaponPortPosition: ShipWeaponPort, shipContainer: Container) => void;
 
+  private updatePlayerHasDied: (bool: boolean) => void;
+
+  private healthBar!: HealthBar;
+  
   constructor(
     shipConfig: ShipConfig,
     audioManager: AudioManager,
+    healthBar: HealthBar,
     createBulletCallback: (weaponPortPosition: ShipWeaponPort, shipContainer: Container) => void,
     updatePlayerHasDied: (bool: boolean) => void,
   ) {
     super();
     this.shipConfig = shipConfig;
     this.audioManager = audioManager;
+    this.healthBar = healthBar;
     this.createBulletCallback = createBulletCallback;
     this.updatePlayerHasDied = updatePlayerHasDied;
+    this.currentHealthPoints = shipConfig.shipHealthPoints;
   }
 
   private createAnimatedSpriteFromSpriteSheet(spriteSheet: SpriteSheet): AnimatedSprite {
@@ -174,14 +182,17 @@ export class Ship extends Container {
   }
 
   public updateHealthPoints(update: number): void {
-    this.shipConfig.shipHealthPoints += update;
-    if (this.shipConfig.shipHealthPoints <= 0) {
+    this.currentHealthPoints += update;
+    
+    this.healthBar.updateHealthBarDamage(-(this.currentHealthPoints / this.shipConfig.shipHealthPoints * 100 - this.shipConfig.shipHealthPoints))
+    
+    if (this.currentHealthPoints <= 0) {
       this.destroyShip(this.parent as Container);
     }
   }
 
   public getHealthPoints(): number {
-    return this.shipConfig.shipHealthPoints;
+    return this.currentHealthPoints;
   }
 
   public destroyShip(stage: Container): void {

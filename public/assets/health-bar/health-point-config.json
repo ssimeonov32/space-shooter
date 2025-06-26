@@ -1,0 +1,9 @@
+{
+  "name": "healthPoint",
+  "sprite": {
+    "alias": "healthPoint",
+    "src": "health-point.png",
+    "width": 9,
+    "height": 5
+  }
+}
