@@ -213,6 +213,7 @@ class SpaceShooterGame {
       if (!this.gameHasStarted) return;
 
       if (this.playerHasDied) {
+        this.app.renderer.events.cursorStyles.default = 'default';
         if (this.gameJoever) return;
 
         const gameOverContainer = this.generateGameOverContainer();
@@ -225,7 +226,6 @@ class SpaceShooterGame {
             this.app.stage.removeChild(asteroid);
           }
         );
-        this.app.renderer.events.cursorStyles.default = 'default';
         this.entityManager.removeAllAsteroidEntities();
         return;
       }
@@ -556,7 +556,8 @@ class SpaceShooterGame {
       this.createAsteroids();
       this.scoreboard = this.generateScoreText();
       this.app.stage.addChild(this.scoreboard);
-       this.app.renderer.events.cursorStyles.default = 'none';
+      this.app.renderer.events.cursorStyles.default = 'none';
+      this.app.stage.addChild(this.crosshairSprite);
     }
   }
 
